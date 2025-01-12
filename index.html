@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatGPT Clone</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-size: 20px;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background-color: #121212;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 70%;
+            background-color: #1e1e1e;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+            padding: 30px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        h1 {
+            color: #00bcd4;
+            text-align: center;
+        }
+        #query {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #444;
+            background-color: #2c2c2c;
+            color: #ffffff;
+            font-size: 20px;
+        }
+        button {
+            background-color: #00bcd4;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0097a7;
+        }
+        #response {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            background-color: #2c2c2c;
+            color: #ffffff;
+            text-align: left;
+            padding-right: 20px;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+        
+        .button-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        #stop-responding {
+            display: none;
+            background-color: #dc3545;
+        }
+        p {
+            font-size: 20px;
+            color: #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>ChatGPT Clone</h1>
+        <form id="query-form">
+            <div class="form-group">
+                <input type="text" id="query" name="query" class="form-control" placeholder="Enter your query" required>
+            </div>
+            <div class="button-container">
+                <button type="submit" class="btn btn-primary">Submit</button>
+                <button type="button" class="btn btn-secondary" id="clear-chat">Clear </button>
+                <button type="button" class="btn btn-danger" id="stop-responding">Stop Responding</button>
+            </div>
+        </form>
+        <div id="response" class="mt-3"></div>
+    </div>
+
+    <!-- Bootstrap JS and dependencies -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.3/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    
+    <script>
+        let typingEffectTimeout;
+        let isTyping = false;
+
+        function typeOutText(element, text, delay = 10) {
+            let i = 0;
+            isTyping = true;
+            document.getElementById('stop-responding').style.display = 'inline-block';
+
+            function type() {
+                if (i < text.length && isTyping) {
+                    element.append(text.charAt(i));
+                    i++;
+                    typingEffectTimeout = setTimeout(type, delay);
+                } else {
+                    isTyping = false;
+                    document.getElementById('stop-responding').style.display = 'none';
+                }
+            }
+            type();
+        }
+
+        document.getElementById('query-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const query = document.getElementById('query').value;
+            const responseContainer = document.getElementById('response');
+
+            // Add the query to the response container
+            const queryText = document.createElement('p');
+            queryText.textContent = "You: " + query;
+            responseContainer.appendChild(queryText);
+
+            fetch('/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ query })
+            })
+            .then(response => response.json())
+            .then(data => {
+                const responseText = document.createElement('p');
+                responseContainer.appendChild(responseText);
+                typeOutText(responseText, "Jarvis: " + data.response);
+                responseContainer.scrollTop = responseContainer.scrollHeight;
+                document.getElementById('query').value = '';
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                const responseText = document.createElement('p');
+                responseText.textContent = 'An error occurred. Please try again.';
+                responseContainer.appendChild(responseText);
+            });
+        });
+
+        document.getElementById('clear-chat').addEventListener('click', function() {
+            document.getElementById('response').innerHTML = '';
+        });
+
+        document.getElementById('stop-responding').addEventListener('click', function() {
+            isTyping = false;
+            clearTimeout(typingEffectTimeout);
+            document.getElementById('stop-responding').style.display = 'none';
+        });
+    </script>
+</body>
+</html>
